@@ -1,10 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { type Server } from "node:http";
+import { fileURLToPath } from "node:url";
+
 import express, { type Express } from "express";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export async function serveStatic(app: Express, _server: Server) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  const distPath = path.resolve(__dirname, "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -23,7 +28,7 @@ export async function serveStatic(app: Express, _server: Server) {
 // Debug logging helper
 function debugLog(msg: string) {
   try {
-    const logPath = path.resolve(import.meta.dirname, "debug.log");
+    const logPath = path.resolve(__dirname, "debug.log");
     fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
   } catch (e) {
     console.error("Failed to write to log file:", e);
