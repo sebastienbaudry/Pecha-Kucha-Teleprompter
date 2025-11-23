@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Téléprompteur Pecha Kucha</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --accent-color: #00e5ff;
+            --warning-color: #ff3d00;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Empêche le scroll manuel */
+        }
+
+        /* --- En-tête (Compteur et Infos) --- */
+        header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.8);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 10;
+            border-bottom: 1px solid #333;
+        }
+
+        #slide-counter {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        #timer-display {
+            color: var(--accent-color);
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+        }
+
+        /* Barre de progression visuelle */
+        #progress-container {
+            position: fixed;
+            top: 60px; /* Juste sous le header */
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background-color: #333;
+            z-index: 9;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 100%;
+            background-color: var(--accent-color);
+            transition: width 1s linear, background-color 0.3s;
+            transform-origin: left;
+        }
+
+        /* --- Zone de texte principale --- */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin-top: 60px; /* Espace pour le header */
+            margin-bottom: 80px; /* Espace pour les contrôles */
+            text-align: left;
+        }
+
+        #script-text {
+            font-size: clamp(1.4rem, 4vw, 2.2rem); /* Taille adaptative */
+            line-height: 1.5;
+            max-width: 800px;
+        }
+
+        /* Animation de fondu entre les diapos */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Contrôles (Bas de page) --- */
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: rgba(0,0,0,0.9);
+            border-top: 1px solid #333;
+        }
+
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            background: #555;
+        }
+
+        #btn-action {
+            background-color: var(--accent-color);
+            color: black;
+            min-width: 120px;
+        }
+
+        /* État d'urgence (moins de 5 secondes) */
+        .urgent #timer-display {
+            color: var(--warning-color);
+        }
+        .urgent #progress-bar {
+            background-color: var(--warning-color);
+        }
+
+        /* Fin de présentation */
+        .finished {
+            color: #4caf50;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <span id="slide-counter">Diapo 1/13</span>
+        <span id="timer-display">30s</span>
+    </header>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
+    <main>
+        <div id="script-text" class="fade-in">
+            Prêt ? Appuyez sur START pour commencer.
+        </div>
+    </main>
+
+    <footer>
+        <button id="btn-reset" onclick="resetPresentation()">Reset</button>
+        <button id="btn-action" onclick="toggleTimer()">START</button>
+    </footer>
+
+    <script>
+        // Données des scripts (nettoyées pour la lecture)
+        const slides = [
+            "L’art et la morale ont toujours entretenu des relations conflictuelles. Aujourd’hui, ce vieux combat se réactualise brutalement : nous redécouvrons des chefs-d'œuvre à la lumière de scandales, de révélations ou d'archives qui ébranlent l'image des artistes. Une question éthique surgit alors : notre sens moral doit-il censurer notre plaisir esthétique ?",
+            
+            "Plus précisément, nous nous intéressons au lien qui unit le créateur à sa création. Dans une société qui exige de la transparence, les fautes de la vie privée d'un artiste – violences, racismes, crimes – viennent percuter notre appréciation de son travail. Le sujet de cet exposé est ce dilemme contemporain : que faire des œuvres 'coupables' ?",
+            
+            "Cela soulève une problématique centrale : Peut-on séparer l’œuvre de l’artiste ? L'acte artistique est-il autonome, flottant au-dessus de la réalité, ou demeure-t-il sali par la biographie de son auteur ? Doit-on trancher, comme dans le jugement de Salomon, en sacrifiant l'œuvre pour punir l'homme ?",
+            
+            "Pour répondre, nous suivrons un parcours en deux temps. D'abord, nous analyserons les arguments de ceux qui séparent l'homme de l'artiste pour sauver le patrimoine. Ensuite, nous verrons pourquoi cette séparation est devenue impossible pour le public, avant de conclure sur une troisième voie : la contextualisation.",
+            
+            "Premier argument : l’œuvre dépasse l’individu. Une fois achevée, la création s'émancipe de son auteur pour appartenir à l'Histoire. Comme devant cette toile abstraite, l'émotion esthétique ne dépend pas de la vie privée du peintre. Selon cette logique, l'œuvre possède une 'autonomie symbolique'. Vouloir la juger moralement, c'est confondre l'esthétique et le judiciaire.",
+            
+            "De plus, le génie artistique ne se corrèle pas à la vertu morale. L'histoire de l'art est remplie de créateurs aux comportements détestables qui ont pourtant produit du sublime. Si nous devions effacer toutes les œuvres créées par des hommes immoraux, nos musées et nos bibliothèques seraient vides. Il faut donc accepter ce paradoxe : un 'sale type' peut être un grand artiste.",
+            
+            "L'exemple incontournable en France est Louis-Ferdinand Céline. Auteur de pamphlets antisémites abjects, il a pourtant révolutionné la littérature avec Voyage au bout de la nuit. La position intellectuelle dominante consiste à dissocier le génie du style de l'idéologie de l'homme. On condamne le citoyen Céline, mais on continue d'étudier l'écrivain.",
+            
+            "Pourtant, cette séparation est parfois intellectuellement malhonnête. Souvent, l’œuvre porte la marque intime, voire les névroses de son auteur. Dans le cinéma d'auteur ou la musique, la fiction est le miroir de la réalité. Ignorer la biographie revient alors à se priver d'une clé de compréhension essentielle. L'art n'est pas un objet neutre, c'est une expression de soi.",
+            
+            "D'ailleurs, le public ne parvient pas toujours à faire la part des choses. Prenez le cas de Roman Polanski : aujourd'hui, on regarde ses films à travers le prisme des accusations qui le visent. Le contexte modifie la réception. Quand le scandale est trop bruyant, l'image de l'accusé se superpose à l'écran : la dissociation devient psychologiquement impossible pour le spectateur.",
+            
+            "Face à cela, la seule voie viable n'est ni la censure, ni le déni, mais la contextualisation. Il s'agit d'accompagner l'œuvre, comme le font certains musées, par des explications pédagogiques. On maintient l'accès à la culture, mais on éduque le regard. C'est une approche critique qui permet de préserver le patrimoine sans cautionner les actes.",
+            
+            "En bilan, la séparation totale entre l’œuvre et l’artiste est un idéal théorique qui résiste mal à la réalité. L’œuvre peut survivre au temps, mais elle reste cicatrisée par l'histoire de son auteur. Ce débat révèle la tension permanente entre notre désir de beauté intemporelle et notre besoin de justice immédiate.",
+            
+            "Personnellement, je défends une 'admiration lucide'. Je refuse de brûler les livres ou d'interdire les films, car l'art nous aide à penser. Mais je refuse l'aveuglement. On peut admirer le talent tout en condamnant fermement l'homme. C'est un équilibre difficile, une gymnastique intellectuelle nécessaire.",
+            
+            "Finalement, ce débat nous fait grandir. Il nous force à sortir de la passivité pour devenir des 'citoyens culturels'. L'avenir réside sans doute dans cette capacité à accepter la complexité du monde : aimer une œuvre ne signifie pas absoudre son créateur. C'est là que commence véritablement l'esprit critique."
+        ];
+
+        const SLIDE_DURATION = 30; // secondes par diapo
+        let currentIndex = 0;
+        let timeLeft = SLIDE_DURATION;
+        let timerInterval = null;
+        let isRunning = false;
+
+        // Éléments du DOM
+        const textEl = document.getElementById('script-text');
+        const timerDisplay = document.getElementById('timer-display');
+        const counterDisplay = document.getElementById('slide-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const btnAction = document.getElementById('btn-action');
+        const body = document.body;
+
+        // Initialisation
+        function init() {
+            textEl.innerHTML = "<b>PRÊT ?</b><br><br>Le texte défilera automatiquement toutes les 30 secondes.<br>Appuyez sur START.";
+        }
+
+        function updateDisplay() {
+            // Mettre à jour le texte (avec animation reset)
+            textEl.classList.remove('fade-in');
+            void textEl.offsetWidth; // Trigger reflow
+            textEl.classList.add('fade-in');
+            textEl.innerText = slides[currentIndex];
+
+            // Mettre à jour le compteur
+            counterDisplay.innerText = `Diapo ${currentIndex + 1} / ${slides.length}`;
+            
+            // Reset timer visuel
+            resetTimerVisuals();
+        }
+
+        function resetTimerVisuals() {
+            timeLeft = SLIDE_DURATION;
+            timerDisplay.innerText = timeLeft + "s";
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '100%';
+            body.classList.remove('urgent');
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            btnAction.innerText = "PAUSE";
+            
+            // Si c'est le tout début
+            if (textEl.innerText.includes("PRÊT ?")) {
+                updateDisplay();
+            }
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = timeLeft + "s";
+
+                // Gestion de la barre de progression
+                progressBar.style.transition = 'width 1s linear';
+                const percentage = (timeLeft / SLIDE_DURATION) * 100;
+                progressBar.style.width = percentage + "%";
+
+                // Alerte visuelle (rouge) à 5 secondes
+                if (timeLeft <= 5) {
+                    body.classList.add('urgent');
+                }
+
+                // Fin du temps
+                if (timeLeft <= 0) {
+                    nextSlide();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            btnAction.innerText = "REPRISE";
+            progressBar.style.transition = 'none'; // Figer la barre
+        }
+
+        function nextSlide() {
+            currentIndex++;
+            if (currentIndex < slides.length) {
+                updateDisplay();
+            } else {
+                endPresentation();
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function resetPresentation() {
+            pauseTimer();
+            currentIndex = 0;
+            btnAction.innerText = "START";
+            resetTimerVisuals();
+            init();
+        }
+
+        function endPresentation() {
+            pauseTimer();
+            textEl.innerHTML = "<h1 style='text-align:center'>FIN</h1>";
+            timerDisplay.innerText = "0s";
+            counterDisplay.innerText = "Terminé";
+            btnAction.innerText = "Recommencer";
+            btnAction.onclick = resetPresentation;
+            progressBar.style.width = "0%";
+        }
+
+        // Démarrer
+        init();
+
+    </script>
+</body>
+</html>
