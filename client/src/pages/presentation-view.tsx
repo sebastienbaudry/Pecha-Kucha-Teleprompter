@@ -1,0 +1,238 @@
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Presentation } from "@shared/schema";
+
+const SLIDE_DURATION = 30; // seconds per slide
+
+export default function PresentationView() {
+  const params = useParams();
+  const [, navigate] = useLocation();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(SLIDE_DURATION);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const { data: presentation, isLoading } = useQuery<Presentation>({
+    queryKey: ["/api/presentations", params.id],
+  });
+
+  const totalSlides = presentation?.slides.length || 0;
+  const currentSlide = presentation?.slides[currentIndex] || "";
+  const isUrgent = timeLeft <= 5 && isRunning;
+
+  const resetPresentation = useCallback(() => {
+    setCurrentIndex(0);
+    setTimeLeft(SLIDE_DURATION);
+    setIsRunning(false);
+    setIsFinished(false);
+  }, []);
+
+  const nextSlide = useCallback(() => {
+    if (!presentation) return;
+
+    if (currentIndex < presentation.slides.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setTimeLeft(SLIDE_DURATION);
+    } else {
+      setTimeLeft(0);
+      setIsRunning(false);
+      setIsFinished(true);
+    }
+  }, [currentIndex, presentation]);
+
+  const toggleTimer = useCallback(() => {
+    if (isFinished) {
+      resetPresentation();
+      setIsRunning(true);
+    } else {
+      setIsRunning(!isRunning);
+    }
+  }, [isRunning, isFinished, resetPresentation]);
+
+  useEffect(() => {
+    if (!isRunning || isFinished) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          nextSlide();
+          return SLIDE_DURATION;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRunning, isFinished, nextSlide]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        toggleTimer();
+      } else if (e.key === "Escape") {
+        navigate("/");
+      } else if (e.key === "r" || e.key === "R") {
+        resetPresentation();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [toggleTimer, resetPresentation, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-teleprompter-bg flex items-center justify-center">
+        <div className="text-teleprompter-text text-xl animate-pulse">Loading presentation...</div>
+      </div>
+    );
+  }
+
+  if (!presentation) {
+    return (
+      <div className="h-screen bg-teleprompter-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-teleprompter-text text-xl mb-4">Presentation not found</div>
+          <Button onClick={() => navigate("/")} data-testid="button-go-home">
+            Go Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const progressPercentage = (timeLeft / SLIDE_DURATION) * 100;
+
+  return (
+    <div className="h-screen bg-teleprompter-bg text-teleprompter-text flex flex-col overflow-hidden">
+      {/* Header */}
+      <header
+        className="fixed top-0 left-0 right-0 z-10 px-4 py-3 flex items-center justify-between"
+        style={{ backgroundColor: "rgba(0,0,0,0.8)", borderBottom: "1px solid #333" }}
+      >
+        <span
+          className="text-base font-semibold"
+          style={{ color: "#888" }}
+          data-testid="text-slide-counter"
+        >
+          Slide {currentIndex + 1}/{totalSlides}
+        </span>
+        <span
+          className="text-2xl font-mono font-bold"
+          style={{ color: isUrgent ? "#ff3d00" : "#00e5ff" }}
+          data-testid="text-timer"
+        >
+          {timeLeft}s
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/")}
+          className="text-teleprompter-text hover:text-teleprompter-accent"
+          data-testid="button-exit"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+      </header>
+
+      {/* Progress Bar */}
+      <div
+        className="fixed top-[60px] left-0 right-0 h-1.5 z-[9]"
+        style={{ backgroundColor: "#333" }}
+      >
+        <div
+          className="h-full transition-all duration-1000 linear"
+          style={{
+            width: `${progressPercentage}%`,
+            backgroundColor: isUrgent ? "#ff3d00" : "#00e5ff",
+            transformOrigin: "left",
+          }}
+          data-testid="progress-bar"
+        />
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center px-5 mt-[60px] mb-20">
+        <div
+          className="max-w-3xl w-full animate-fade-in"
+          key={currentIndex}
+          data-testid="text-slide-content"
+        >
+          {isFinished ? (
+            <div className="text-center">
+              <div
+                className="text-5xl font-bold mb-4"
+                style={{ color: "#4caf50" }}
+              >
+                Presentation Complete!
+              </div>
+              <p className="text-xl" style={{ color: "#888" }}>
+                Press START to restart or ESC to exit
+              </p>
+            </div>
+          ) : !isRunning && currentIndex === 0 && timeLeft === SLIDE_DURATION ? (
+            <div className="text-center">
+              <div className="text-4xl font-bold mb-4">Ready?</div>
+              <p className="text-xl" style={{ color: "#888" }}>
+                Press START or SPACE to begin your presentation
+              </p>
+            </div>
+          ) : (
+            <div
+              className="text-left leading-relaxed whitespace-pre-wrap"
+              style={{
+                fontSize: "clamp(1.4rem, 4vw, 2.2rem)",
+                lineHeight: "1.5",
+              }}
+            >
+              {currentSlide}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer Controls */}
+      <footer
+        className="fixed bottom-0 left-0 right-0 px-5 py-5 flex items-center justify-center gap-5 z-10"
+        style={{ backgroundColor: "rgba(0,0,0,0.9)", borderTop: "1px solid #333" }}
+      >
+        <Button
+          onClick={resetPresentation}
+          className="px-8 py-6 text-base font-bold uppercase rounded-full"
+          style={{
+            backgroundColor: "#333",
+            color: "white",
+          }}
+          data-testid="button-reset"
+        >
+          Reset
+        </Button>
+        <Button
+          onClick={toggleTimer}
+          className="px-8 py-6 text-base font-bold uppercase rounded-full min-w-[120px]"
+          style={{
+            backgroundColor: "#00e5ff",
+            color: "black",
+          }}
+          data-testid="button-action"
+        >
+          {isFinished ? "RESTART" : isRunning ? "PAUSE" : "START"}
+        </Button>
+      </footer>
+
+      {/* Keyboard Shortcuts Help */}
+      <div
+        className="fixed bottom-24 right-5 text-xs"
+        style={{ color: "#555" }}
+      >
+        <div>SPACE: Start/Pause</div>
+        <div>R: Reset</div>
+        <div>ESC: Exit</div>
+      </div>
+    </div>
+  );
+}
