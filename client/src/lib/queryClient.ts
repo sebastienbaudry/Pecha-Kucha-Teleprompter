@@ -12,7 +12,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(import.meta.env.BASE_URL + url.replace(/^\//, ""), {
+  const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -30,7 +30,7 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
     async ({ queryKey }) => {
       const res = await fetch(
-        import.meta.env.BASE_URL + (queryKey.join("/") as string).replace(/^\//, ""),
+        (queryKey.join("/") as string).replace(/^\//, ""),
         {
           credentials: "include",
         },

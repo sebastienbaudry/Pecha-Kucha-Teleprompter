@@ -37,5 +37,4 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-  base: "/PechaKuchaPrompteur/",
 });
