@@ -2,10 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPresentationSchema } from "@shared/schema";
+import { Router } from "express";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const router = Router();
+
   // Get all presentations
-  app.get("/api/presentations", async (_req, res) => {
+  router.get("/api/presentations", async (_req, res) => {
     try {
       const presentations = await storage.getPresentations();
       res.json(presentations);
@@ -15,7 +18,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a single presentation
-  app.get("/api/presentations/:id", async (req, res) => {
+  router.get("/api/presentations/:id", async (req, res) => {
     try {
       const presentation = await storage.getPresentation(req.params.id);
       if (!presentation) {
@@ -28,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new presentation
-  app.post("/api/presentations", async (req, res) => {
+  router.post("/api/presentations", async (req, res) => {
     try {
       const validatedData = insertPresentationSchema.parse(req.body);
       const presentation = await storage.createPresentation(validatedData);
@@ -42,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a presentation
-  app.patch("/api/presentations/:id", async (req, res) => {
+  router.patch("/api/presentations/:id", async (req, res) => {
     try {
       const validatedData = insertPresentationSchema.parse(req.body);
       const presentation = await storage.updatePresentation(req.params.id, validatedData);
@@ -59,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a presentation
-  app.delete("/api/presentations/:id", async (req, res) => {
+  router.delete("/api/presentations/:id", async (req, res) => {
     try {
       const success = await storage.deletePresentation(req.params.id);
       if (!success) {
@@ -70,6 +73,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to delete presentation" });
     }
   });
+
+  app.use("/PechaKuchaPrompteur", router);
 
   const httpServer = createServer(app);
 
