@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { type Server } from "node:http";
-
 import express, { type Express } from "express";
 
 export async function serveStatic(app: Express, _server: Server) {
@@ -21,6 +20,44 @@ export async function serveStatic(app: Express, _server: Server) {
   });
 }
 
+// Debug logging helper
+function debugLog(msg: string) {
+  try {
+    const logPath = path.resolve(import.meta.dirname, "debug.log");
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch (e) {
+    console.error("Failed to write to log file:", e);
+  }
+}
+
 (async () => {
-  await runApp(serveStatic);
+  try {
+    debugLog("Starting application...");
+    debugLog(`Node Version: ${process.version}`);
+    debugLog(`NODE_ENV: ${process.env.NODE_ENV}`);
+
+    // Dynamic import for dotenv
+    try {
+      const dotenv = await import("dotenv");
+      dotenv.config();
+      debugLog("Loaded .env file");
+    } catch (e) {
+      debugLog("Could not load dotenv (module not found?), skipping .env loading");
+    }
+
+    debugLog(`DATABASE_URL present: ${!!process.env.DATABASE_URL}`);
+
+    if (!process.env.DATABASE_URL) {
+      debugLog("CRITICAL: DATABASE_URL is missing!");
+    }
+
+    // Dynamic import for app
+    const { default: runApp } = await import("./app");
+    await runApp(serveStatic);
+    debugLog("Application started successfully");
+  } catch (e: any) {
+    debugLog(`FATAL ERROR: ${e.message}`);
+    debugLog(e.stack);
+    process.exit(1);
+  }
 })();
