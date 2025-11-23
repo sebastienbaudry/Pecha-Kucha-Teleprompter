@@ -1,5 +1,7 @@
-import { type Presentation, type InsertPresentation } from "@shared/schema";
+import { type Presentation, type InsertPresentation, presentations } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Presentations
@@ -74,4 +76,43 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getPresentations(): Promise<Presentation[]> {
+    return await db.select().from(presentations);
+  }
+
+  async getPresentation(id: string): Promise<Presentation | undefined> {
+    const [presentation] = await db.select().from(presentations).where(eq(presentations.id, id));
+    return presentation;
+  }
+
+  async createPresentation(insertPresentation: InsertPresentation): Promise<Presentation> {
+    const [presentation] = await db
+      .insert(presentations)
+      .values(insertPresentation)
+      .returning();
+    return presentation;
+  }
+
+  async updatePresentation(
+    id: string,
+    insertPresentation: InsertPresentation
+  ): Promise<Presentation | undefined> {
+    const [presentation] = await db
+      .update(presentations)
+      .set(insertPresentation)
+      .where(eq(presentations.id, id))
+      .returning();
+    return presentation;
+  }
+
+  async deletePresentation(id: string): Promise<boolean> {
+    const [deleted] = await db
+      .delete(presentations)
+      .where(eq(presentations.id, id))
+      .returning();
+    return !!deleted;
+  }
+}
+
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
