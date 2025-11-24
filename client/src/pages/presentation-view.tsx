@@ -174,7 +174,7 @@ export default function PresentationView() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-start justify-center px-3 sm:px-5 mt-[60px] mb-20 overflow-y-auto">
+      <main className="flex-1 flex items-start justify-center px-3 sm:px-5 mt-[60px] mb-32 overflow-y-auto">
         <div
           className="max-w-3xl w-full animate-fade-in py-4"
           key={currentIndex}
