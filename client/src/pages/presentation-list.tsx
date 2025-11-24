@@ -103,7 +103,7 @@ export default function PresentationList() {
                 <CardHeader>
                   <CardTitle className="line-clamp-2">{presentation.title}</CardTitle>
                   <CardDescription>
-                    {presentation.slides.length} slide{presentation.slides.length !== 1 ? 's' : ''} • {Math.ceil(presentation.slides.length * 30 / 60)} min
+                    {presentation.slides.length} slide{presentation.slides.length !== 1 ? 's' : ''} • {Math.ceil(presentation.slides.length * (presentation.slideDuration || 30) / 60)} min
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

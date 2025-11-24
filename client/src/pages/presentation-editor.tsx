@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertPresentationSchema, type Presentation } from "@shared/schema";
@@ -76,6 +77,7 @@ export default function PresentationEditor() {
     defaultValues: {
       title: "",
       slides: [""],
+      slideDuration: 30,
     },
   });
 
@@ -84,6 +86,7 @@ export default function PresentationEditor() {
       form.reset({
         title: presentation.title,
         slides: presentation.slides,
+        slideDuration: presentation.slideDuration || 30,
       });
     }
   }, [presentation, isNew, form]);
@@ -131,7 +134,7 @@ export default function PresentationEditor() {
             {isNew ? "Create Presentation" : "Edit Presentation"}
           </h1>
           <p className="text-muted-foreground">
-            Each slide will display for 30 seconds during presentation
+            Configure your presentation settings and slide content
           </p>
         </div>
 
@@ -156,6 +159,35 @@ export default function PresentationEditor() {
                           data-testid="input-title"
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="slideDuration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slide Duration</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value?.toString()}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-duration">
+                            <SelectValue placeholder="Select duration" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="20">20 seconds</SelectItem>
+                          <SelectItem value="25">25 seconds</SelectItem>
+                          <SelectItem value="30">30 seconds</SelectItem>
+                          <SelectItem value="35">35 seconds</SelectItem>
+                          <SelectItem value="40">40 seconds</SelectItem>
+                          <SelectItem value="45">45 seconds</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -5,13 +5,11 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Presentation } from "@shared/schema";
 
-const SLIDE_DURATION = 30; // seconds per slide
-
 export default function PresentationView() {
   const params = useParams();
   const [, navigate] = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(SLIDE_DURATION);
+  const [timeLeft, setTimeLeft] = useState(30); // Will be updated when presentation loads
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
@@ -25,17 +23,17 @@ export default function PresentationView() {
 
   const resetPresentation = useCallback(() => {
     setCurrentIndex(0);
-    setTimeLeft(SLIDE_DURATION);
+    setTimeLeft(presentation?.slideDuration || 30);
     setIsRunning(false);
     setIsFinished(false);
-  }, []);
+  }, [presentation]);
 
   const nextSlide = useCallback(() => {
     if (!presentation) return;
 
     if (currentIndex < presentation.slides.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setTimeLeft(SLIDE_DURATION);
+      setTimeLeft(presentation.slideDuration || 30);
     } else {
       setTimeLeft(0);
       setIsRunning(false);
@@ -53,20 +51,20 @@ export default function PresentationView() {
   }, [isRunning, isFinished, resetPresentation]);
 
   useEffect(() => {
-    if (!isRunning || isFinished) return;
+    if (!isRunning || isFinished || !presentation) return;
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           nextSlide();
-          return SLIDE_DURATION;
+          return presentation.slideDuration || 30;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, isFinished, nextSlide]);
+  }, [isRunning, isFinished, nextSlide, presentation]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -83,6 +81,13 @@ export default function PresentationView() {
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [toggleTimer, resetPresentation, navigate]);
+
+  // Initialize timeLeft when presentation loads
+  useEffect(() => {
+    if (presentation) {
+      setTimeLeft(presentation.slideDuration || 30);
+    }
+  }, [presentation]);
 
   if (isLoading) {
     return (
@@ -105,6 +110,7 @@ export default function PresentationView() {
     );
   }
 
+  const SLIDE_DURATION = presentation?.slideDuration || 30;
   const progressPercentage = (timeLeft / SLIDE_DURATION) * 100;
 
   return (
@@ -174,7 +180,7 @@ export default function PresentationView() {
                 Press START to restart or ESC to exit
               </p>
             </div>
-          ) : !isRunning && currentIndex === 0 && timeLeft === SLIDE_DURATION ? (
+          ) : !isRunning && currentIndex === 0 && timeLeft === (presentation?.slideDuration || 30) ? (
             <div className="text-center">
               <div className="text-2xl sm:text-4xl font-bold mb-4">Ready?</div>
               <p className="text-base sm:text-xl" style={{ color: "#888" }}>
