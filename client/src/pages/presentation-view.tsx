@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Presentation } from "@shared/schema";
 
@@ -41,6 +41,12 @@ export default function PresentationView() {
     }
   }, [currentIndex, presentation]);
 
+  const previousSlide = useCallback(() => {
+    if (!presentation || currentIndex === 0) return;
+    setCurrentIndex(currentIndex - 1);
+    setTimeLeft(presentation.slideDuration || 30);
+  }, [currentIndex, presentation]);
+
   const toggleTimer = useCallback(() => {
     if (isFinished) {
       resetPresentation();
@@ -75,12 +81,18 @@ export default function PresentationView() {
         navigate("/");
       } else if (e.key === "r" || e.key === "R") {
         resetPresentation();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        previousSlide();
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [toggleTimer, resetPresentation, navigate]);
+  }, [toggleTimer, resetPresentation, navigate, nextSlide, previousSlide]);
 
   // Initialize timeLeft when presentation loads
   useEffect(() => {
@@ -153,7 +165,7 @@ export default function PresentationView() {
         <div
           className="h-full transition-all duration-1000 linear"
           style={{
-            width: `${progressPercentage}%`,
+            width: `${progressPercentage}% `,
             backgroundColor: isUrgent ? "#ff3d00" : "#00e5ff",
             transformOrigin: "left",
           }}
@@ -212,9 +224,21 @@ export default function PresentationView() {
 
       {/* Footer Controls */}
       <footer
-        className="fixed bottom-0 left-0 right-0 px-5 py-5 flex items-center justify-center gap-5 z-10"
+        className="fixed bottom-0 left-0 right-0 px-5 py-5 flex items-center justify-center gap-3 z-10"
         style={{ backgroundColor: "rgba(0,0,0,0.9)", borderTop: "1px solid #333" }}
       >
+        <Button
+          onClick={previousSlide}
+          disabled={currentIndex === 0}
+          className="px-6 py-6 text-base font-bold rounded-full"
+          style={{
+            backgroundColor: currentIndex === 0 ? "#222" : "#333",
+            color: currentIndex === 0 ? "#555" : "white",
+          }}
+          data-testid="button-previous"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
         <Button
           onClick={resetPresentation}
           className="px-8 py-6 text-base font-bold uppercase rounded-full"
@@ -237,6 +261,18 @@ export default function PresentationView() {
         >
           {isFinished ? "RESTART" : isRunning ? "PAUSE" : "START"}
         </Button>
+        <Button
+          onClick={nextSlide}
+          disabled={isFinished}
+          className="px-6 py-6 text-base font-bold rounded-full"
+          style={{
+            backgroundColor: isFinished ? "#222" : "#333",
+            color: isFinished ? "#555" : "white",
+          }}
+          data-testid="button-next"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </Button>
       </footer>
 
       {/* Keyboard Shortcuts Help */}
@@ -245,6 +281,7 @@ export default function PresentationView() {
         style={{ color: "#555" }}
       >
         <div>SPACE: Start/Pause</div>
+        <div>← →: Navigate slides</div>
         <div>R: Reset</div>
         <div>ESC: Exit</div>
       </div>
