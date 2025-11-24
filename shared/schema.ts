@@ -8,6 +8,7 @@ export const presentations = pgTable("presentations", {
   title: text("title").notNull(),
   slides: text("slides").array().notNull(),
   slideDuration: integer("slide_duration").notNull().default(30),
+  fontSize: text("font_size").notNull().default("medium"),
 });
 
 export const insertPresentationSchema = createInsertSchema(presentations).omit({
@@ -15,6 +16,7 @@ export const insertPresentationSchema = createInsertSchema(presentations).omit({
 }).extend({
   slides: z.array(z.string().min(1, "Slide text cannot be empty")).min(1, "At least one slide is required"),
   slideDuration: z.number().int().min(20).max(45).default(30),
+  fontSize: z.enum(["small", "medium", "large", "xlarge"]).default("medium"),
 });
 
 export type InsertPresentation = z.infer<typeof insertPresentationSchema>;

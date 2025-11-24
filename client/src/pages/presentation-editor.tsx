@@ -78,6 +78,7 @@ export default function PresentationEditor() {
       title: "",
       slides: [""],
       slideDuration: 30,
+      fontSize: "medium" as const,
     },
   });
 
@@ -87,6 +88,7 @@ export default function PresentationEditor() {
         title: presentation.title,
         slides: presentation.slides,
         slideDuration: presentation.slideDuration || 30,
+        fontSize: (presentation.fontSize as "small" | "medium" | "large" | "xlarge") || "medium",
       });
     }
   }, [presentation, isNew, form]);
@@ -186,6 +188,33 @@ export default function PresentationEditor() {
                           <SelectItem value="35">35 seconds</SelectItem>
                           <SelectItem value="40">40 seconds</SelectItem>
                           <SelectItem value="45">45 seconds</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fontSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Font Size</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-font-size">
+                            <SelectValue placeholder="Select font size" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="small">Small</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="large">Large</SelectItem>
+                          <SelectItem value="xlarge">Extra Large</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

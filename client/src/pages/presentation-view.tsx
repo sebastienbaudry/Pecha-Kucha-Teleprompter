@@ -191,7 +191,16 @@ export default function PresentationView() {
             <div
               className="text-left leading-relaxed whitespace-pre-wrap"
               style={{
-                fontSize: "clamp(0.9rem, 2.5vw, 2.2rem)",
+                fontSize: (() => {
+                  const size = presentation?.fontSize || "medium";
+                  const sizeMap = {
+                    small: "clamp(0.9rem, 2.5vw, 2.0rem)",
+                    medium: "clamp(1.2rem, 3vw, 2.2rem)",
+                    large: "clamp(1.5rem, 3.5vw, 2.5rem)",
+                    xlarge: "clamp(1.8rem, 4vw, 3.0rem)",
+                  };
+                  return sizeMap[size as keyof typeof sizeMap] || sizeMap.medium;
+                })(),
                 lineHeight: "1.4",
               }}
             >
