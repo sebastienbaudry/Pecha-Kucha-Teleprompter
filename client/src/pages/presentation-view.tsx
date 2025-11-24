@@ -274,17 +274,6 @@ export default function PresentationView() {
           <ChevronRight className="w-5 h-5" />
         </Button>
       </footer>
-
-      {/* Keyboard Shortcuts Help */}
-      <div
-        className="fixed bottom-24 right-5 text-xs"
-        style={{ color: "#555" }}
-      >
-        <div>SPACE: Start/Pause</div>
-        <div>← →: Navigate slides</div>
-        <div>R: Reset</div>
-        <div>ESC: Exit</div>
-      </div>
     </div>
   );
 }
