@@ -156,28 +156,28 @@ export default function PresentationView() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-5 mt-[60px] mb-20">
+      <main className="flex-1 flex items-start justify-center px-3 sm:px-5 mt-[60px] mb-20 overflow-y-auto">
         <div
-          className="max-w-3xl w-full animate-fade-in"
+          className="max-w-3xl w-full animate-fade-in py-4"
           key={currentIndex}
           data-testid="text-slide-content"
         >
           {isFinished ? (
             <div className="text-center">
               <div
-                className="text-5xl font-bold mb-4"
+                className="text-3xl sm:text-5xl font-bold mb-4"
                 style={{ color: "#4caf50" }}
               >
                 Presentation Complete!
               </div>
-              <p className="text-xl" style={{ color: "#888" }}>
+              <p className="text-lg sm:text-xl" style={{ color: "#888" }}>
                 Press START to restart or ESC to exit
               </p>
             </div>
           ) : !isRunning && currentIndex === 0 && timeLeft === SLIDE_DURATION ? (
             <div className="text-center">
-              <div className="text-4xl font-bold mb-4">Ready?</div>
-              <p className="text-xl" style={{ color: "#888" }}>
+              <div className="text-2xl sm:text-4xl font-bold mb-4">Ready?</div>
+              <p className="text-base sm:text-xl" style={{ color: "#888" }}>
                 Press START or SPACE to begin your presentation
               </p>
             </div>
@@ -185,8 +185,8 @@ export default function PresentationView() {
             <div
               className="text-left leading-relaxed whitespace-pre-wrap"
               style={{
-                fontSize: "clamp(1.4rem, 4vw, 2.2rem)",
-                lineHeight: "1.5",
+                fontSize: "clamp(0.9rem, 2.5vw, 2.2rem)",
+                lineHeight: "1.4",
               }}
             >
               {currentSlide}
